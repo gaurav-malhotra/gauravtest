@@ -1,0 +1,192 @@
+<?php
+
+/**
+ * @file
+ *  Test module file.
+ */
+
+/**
+ * Impleents hook_menu.
+ */
+function test_menu() {
+	$items = array();
+	$items['test-form'] = array(
+		'title' => 'Test form',
+		'description' => 'Test form',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('multi_step_user_info_form'),
+		'access arguments' => array('Test form'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+	return $items;
+}
+
+function multi_step_user_info_form($form, &$form_state) {
+	$form['user_data_form']['reference_number_ajax'] = array(
+		'#type' => 'select',
+		'#title' => 'Select a Patient',
+		'#options' => array(
+			'1' => 'a',
+			'2' => 'b',
+			'3' => 'c',
+		),
+		'#ajax' => array(
+			'callback' => 'ref_number_dropdown_callback',
+			'wrapper' => 'ref_number_list',
+			'event' => 'change',
+			'method' => 'replace',
+			'effect' => 'fade',
+		),
+		'#attributes' => array('class' => array('dynamic-select')),
+//		'#default_value' => isset($values['reference_number_ajax']) ? $values['reference_number_ajax'] : NULL,
+		'#prefix' => '<div class="col-md-12">',
+		'#field_suffix' => '</div>'
+	);
+
+	$form['user_data_form']['patient_name'] = array(
+		'#type' => 'textfield',
+		'#title' => 'Patient Name',
+		'#value' => $patient_name,
+//		'#default_value' => isset($values['patient_name']) ? $values['patient_name'] : NULL,
+		'#prefix' => '<div id="ref_number_list"><div class="col-md-12">',
+		'#field_suffix' => ''
+	);
+	return $form;
+}
+
+function ref_number_dropdown_callback($form, $form_state) {
+//	$query = new EntityFieldQuery();
+//	$query->entityCondition('entity_type', 'node')
+//			->entityCondition('bundle', 'query')
+//			->propertyCondition('status', NODE_PUBLISHED)
+//			->fieldCondition('field_reference_number', 'value', $form_state['values']['reference_number_ajax'], '=')
+//			->range(0, 1);
+//	$result = $query->execute();
+//	$nid = '';
+//	if (isset($result['node'])) {
+//		$nid = $nid = current($result['node'])->nid;
+//		$node = node_load($nid);
+//	}
+//	//  $form_state['rebuild'] = TRUE;
+//	// THESE TWO VALUES SHOULD BE POPULATED ON AJAX CALLBACK //
+	$form['user_data_form']['patient_name']['#value'] = 'abcd';
+	$form['user_data_form']['age']['#value'] = 'fhgj';
+	$elements = array($form['user_data_form']['patient_name'], $form['user_data_form']['age']);
+	return $elements;
+}
+
+function test_form_alter(&$form, &$form_state, $form_id) {
+
+	//echo $form_id;
+//dsm($form_id);
+//echo "<pre>";
+
+//print_r($form);
+
+
+//die();
+if ($form_id=='user_register_form' || $form_id=='user_profile_form')
+{
+
+
+	// Create an object of type SelectQuery
+	$query = db_select('cust_reg_form', 'u');
+ 
+	// Add extra detail to this query object: a condition, fields and a range
+	$query->condition('u.uid', $form['#user']->uid , '=');
+	$query->fields('u', array('uid', 'fname', 'lname', 'address', 'fixed_description'));
+
+	$result = $query->execute();
+
+    $record = $result->fetchAssoc(); 
+        //print_r($record);
+    
+    //die;
+
+	//$account = $form['#user'];
+
+	 $register = ($record['uid'] > 0 ? FALSE : TRUE);
+
+	$form['fname'] = array(
+
+  '#type' => 'textfield', 
+
+  '#title' => t('First Name'), 
+
+  '#size' => 60, 
+
+  '#maxlength' => 128, 
+
+  '#required' => TRUE,
+  '#default_value' => (!$register ? $record['fname']: ''),
+
+);
+
+
+$form['lname'] = array(
+
+  '#type' => 'textfield', 
+
+  '#title' => t('Last Name'), 
+
+  '#size' => 60, 
+
+  '#maxlength' => 128, 
+
+  '#required' => TRUE,
+  '#default_value' => (!$register ? $record['lname']: ''),
+  );
+
+
+
+$form['address'] = array(
+
+  '#type' => 'textarea', 
+
+  '#title' => 'Address', 
+  '#default_value' => (!$register ? $record['address']: ''),
+
+  #'#size' => 255, 
+
+  #'#maxlength' => 255, 
+
+);
+
+$form['fixed_description'] = array(
+    '#description' => 'Fixed description field',
+    '#type' => 'textarea', 
+    '#title' => 'fixed_description',
+    '#default_value' => (!$register ? $record['fixed_description']: ''),
+  );
+
+
+	$form['#submit'][]='test_submit';
+
+}
+
+}
+
+
+function test_submit($form, &$form_state)
+{
+	//echo "<pre>";
+	//print_r($form_state['values']);
+	
+	$dob=mktime(0, 0, 0, $form_state['values']['dob']['month'], $form_state['values']['dob']['day'], $form_state['values']['dob']['year']);
+	
+	//echo "<br>". $dob."<br>";
+	//echo date('F jS, Y g:i:s a', $dob);
+	//die;
+
+db_merge('cust_reg_form')
+->key(array('uid' => $form_state['values']['uid']))
+->fields(array(
+	'fname'=>$form_state['values']['fname'],
+	'lname'=>$form_state['values']['lname'],
+	'dob'=>$dob,
+	'address'=>$form_state['values']['address'],
+	'fixed_description'=>$form_state['values']['fixed_description'],
+'uid'=>$form_state['values']['uid'])
+	)->execute();
+
+}

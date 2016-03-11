@@ -1,0 +1,54 @@
+<?php
+
+function test_schema() {
+  $schema['cust_reg_form'] = array(
+    // Example (partial) specification for table "node".
+    'description' => 'The base table for nodes.',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The primary identifier for a node.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fname' => array(
+        'description' => 'The first name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        //'default' => '',
+      ),
+      'lname' => array(
+        'description' => 'The Last name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        //'default' => '',
+      ),
+      'dob' => array(
+        'description' => 'The date of birth.',
+        'type' => 'int',
+      ),
+      'address' => array(
+        'description' => 'Address.',
+        'type' => 'varchar',
+        'length'=> 500
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  return $schema;
+}
+
+function test_update_7100() {
+  $fixed_description = array(
+    'description' => 'Fixed description field',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  );
+  db_add_field( 'cust_reg_form', 'fixed_description', $fixed_description);
+   
+}
+
